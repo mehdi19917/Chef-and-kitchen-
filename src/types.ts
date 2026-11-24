@@ -12,14 +12,6 @@ export interface RecipeStep {
   tip?: string;
 }
 
-export interface RecipeComment {
-  id: number;
-  recipeId: number;
-  username: string;
-  body: string;
-  createdAt: string;
-}
-
 export interface Recipe {
   id: number;
   authorId: number;
@@ -40,10 +32,8 @@ export interface Recipe {
   steps: RecipeStep[];
   avgRating: number;
   ratingCount: number;
-  commentCount: number;
   isFavorite?: boolean;
   userRating?: number | null;
-  comments?: RecipeComment[];
   createdAt: string;
 }
 
