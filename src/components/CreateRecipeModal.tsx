@@ -422,18 +422,27 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
 
             <div className="space-y-2">
               {ingredients.map((ing, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="نام ماده (مثلاً: برنج ایرانی)"
-                    value={ing.name}
-                    onChange={(e) => {
-                      const next = [...ingredients];
-                      next[idx] = {...next[idx], name: e.target.value};
-                      setIngredients(next);
-                    }}
-                    className="flex-1 px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#DDD6C8] dark:border-[#36302A] bg-[#FAF9F6] dark:bg-[#141210]"
-                  />
+                <div key={idx} className="flex flex-wrap sm:flex-nowrap gap-2">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex justify-end">
+                      <VoiceInputButton onText={(text) => {
+                        const next = [...ingredients];
+                        next[idx] = {...next[idx], name: next[idx].name ? next[idx].name + ' ' + text : text};
+                        setIngredients(next);
+                      }} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="نام ماده (مثلاً: برنج ایرانی)"
+                      value={ing.name}
+                      onChange={(e) => {
+                        const next = [...ingredients];
+                        next[idx] = {...next[idx], name: e.target.value};
+                        setIngredients(next);
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#DDD6C8] dark:border-[#36302A] bg-[#FAF9F6] dark:bg-[#141210]"
+                    />
+                  </div>
                   <input
                     type="text"
                     placeholder="مقدار (مثلاً: ۲ پیمانه)"
@@ -500,29 +509,47 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
                       </button>
                     )}
                   </div>
-                  <input
-                    type="text"
-                    placeholder="عنوان کوتاه مرحله"
-                    value={step.title}
-                    onChange={(e) => {
-                      const next = [...steps];
-                      next[idx] = {...next[idx], title: e.target.value};
-                      setSteps(next);
-                    }}
-                    className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
-                  />
-                  <textarea
-                    rows={2}
-                    required
-                    placeholder="شرح دقیق این مرحله از پخت..."
-                    value={step.instruction}
-                    onChange={(e) => {
-                      const next = [...steps];
-                      next[idx] = {...next[idx], instruction: e.target.value};
-                      setSteps(next);
-                    }}
-                    className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
-                  />
+                  <div className="space-y-1">
+                    <div className="flex justify-end">
+                      <VoiceInputButton onText={(text) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], title: next[idx].title ? next[idx].title + ' ' + text : text};
+                        setSteps(next);
+                      }} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="عنوان کوتاه مرحله"
+                      value={step.title}
+                      onChange={(e) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], title: e.target.value};
+                        setSteps(next);
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-end">
+                      <VoiceInputButton onText={(text) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], instruction: next[idx].instruction ? next[idx].instruction + ' ' + text : text};
+                        setSteps(next);
+                      }} />
+                    </div>
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="شرح دقیق این مرحله از پخت..."
+                      value={step.instruction}
+                      onChange={(e) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], instruction: e.target.value};
+                        setSteps(next);
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
