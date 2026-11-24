@@ -148,7 +148,7 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
         .map((s, idx) => ({
           title: s.title.trim() || `مرحله ${idx + 1}`,
           instruction: s.instruction.trim(),
-          tip: s.tip.trim() || undefined,
+          tip: s.tip?.trim() || undefined,
         }));
 
       const res = await createRecipe({
