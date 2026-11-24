@@ -178,6 +178,15 @@ function sanitizeImageUrl(input: unknown): string {
   return '/src/assets/images/recipe_tahchin_saffron_1795495624588.jpg';
 }
 
+function sanitizeStepImage(input: unknown): string | undefined {
+  if (typeof input !== 'string') return undefined;
+  const value = input.trim();
+  if (/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(value) && value.length <= 360_000) {
+    return value;
+  }
+  return undefined;
+}
+
 function sanitizeVideoUrl(input: unknown): string | null {
   if (typeof input !== 'string') return null;
   const trimmed = input.trim();
@@ -302,7 +311,7 @@ async function startServer() {
     next(err);
   });
 
-  app.use(express.json({limit: '3mb'}));
+  app.use(express.json({limit: '8mb'}));
 
   app.get('/api/health', (_req, res) => {
     res.json({ok: true});
@@ -554,10 +563,11 @@ async function startServer() {
         );
       })
       .slice(0, 20)
-      .map((s: {title?: string; instruction: string; tip?: string}, idx: number) => ({
+      .map((s: {title?: string; instruction: string; tip?: string; imageUrl?: string}, idx: number) => ({
         title: typeof s.title === 'string' && s.title.trim() ? s.title.trim().slice(0, 80) : `مرحله ${idx + 1}`,
         instruction: s.instruction.trim().slice(0, 500),
         tip: typeof s.tip === 'string' && s.tip.trim() ? s.tip.trim().slice(0, 200) : undefined,
+        imageUrl: sanitizeStepImage(s.imageUrl),
       }));
 
     if (steps.length === 0) {
