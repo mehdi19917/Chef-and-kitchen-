@@ -548,16 +548,6 @@ export function getRecipeById(recipeId: number, currentUserId: number | null): R
 
   if (!row) return null;
 
-  const comments = db
-    .prepare(
-      `SELECT id, recipe_id AS recipeId, username, body, created_at AS createdAt
-       FROM comments
-       WHERE recipe_id = ?
-       ORDER BY id DESC`,
-    )
-    .all(recipeId) as RecipeComment[];
-
   const mapped = mapRecipeRow(row);
-  mapped.comments = comments;
   return mapped;
 }
