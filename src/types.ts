@@ -12,6 +12,14 @@ export interface RecipeStep {
   tip?: string;
 }
 
+export interface RecipeComment {
+  id: number;
+  recipeId: number;
+  username: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface Recipe {
   id: number;
   authorId: number;
@@ -34,6 +42,8 @@ export interface Recipe {
   ratingCount: number;
   isFavorite?: boolean;
   userRating?: number | null;
+  /** Legacy database compatibility only; never rendered or accepted through the API. */
+  comments?: RecipeComment[];
   createdAt: string;
 }
 
