@@ -419,6 +419,14 @@ export function RecipeDetailModal({
                           {toFaDigits(idx + 1)}. {step.title}
                         </h4>
                         <p className="text-sm text-[#44403C] dark:text-[#D6D3CD] leading-7">{step.instruction}</p>
+                        {step.imageUrl && (
+                          <img
+                            src={step.imageUrl}
+                            alt={`تصویر مرحله ${idx + 1}: ${step.title}`}
+                            loading="lazy"
+                            className="w-full max-h-80 object-contain rounded-xl border border-[#E6E1D6] dark:border-[#332E28] bg-white dark:bg-[#1E1B18]"
+                          />
+                        )}
                         {step.tip && (
                           <p className="text-xs text-[#1F5E43] dark:text-emerald-400 pt-1">
                             نکته کاربردی: {step.tip}
