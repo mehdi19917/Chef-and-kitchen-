@@ -2,6 +2,7 @@ import {Film, ImagePlus, Plus, Trash2, Upload, X} from 'lucide-react';
 import {useState, type ChangeEvent, type FormEvent} from 'react';
 import {createRecipe, uploadVideoFile} from '../lib/api.ts';
 import {formatBytesFa, toFaDigits} from '../lib/format.ts';
+import {VoiceInputButton} from './VoiceInputButton.tsx';
 import type {Recipe, RecipeCategory, RecipeDifficulty, StorageStats} from '../types.ts';
 
 interface CreateRecipeModalProps {
@@ -183,9 +184,12 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
           {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label htmlFor="recipe-title" className="block text-xs font-medium mb-1.5">
-                عنوان دستور (مثلاً: طرز تهیه ته‌چین مرغ یا کیک هویج و گردو)
-              </label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label htmlFor="recipe-title" className="block text-xs font-medium">
+                  عنوان دستور (مثلاً: طرز تهیه ته‌چین مرغ یا کیک هویج و گردو)
+                </label>
+                <VoiceInputButton onText={(text) => setTitle((prev) => prev ? prev + ' ' + text : text)} />
+              </div>
               <input
                 id="recipe-title"
                 type="text"
@@ -198,9 +202,12 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="recipe-desc" className="block text-xs font-medium mb-1.5">
-                توضیح کوتاه (طعم، بافت و کاربرد دستور)
-              </label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label htmlFor="recipe-desc" className="block text-xs font-medium">
+                  توضیح کوتاه (طعم، بافت و کاربرد دستور)
+                </label>
+                <VoiceInputButton onText={(text) => setDescription((prev) => prev ? prev + ' ' + text : text)} />
+              </div>
               <textarea
                 id="recipe-desc"
                 required
