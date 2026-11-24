@@ -1,4 +1,4 @@
-name: Verify Pokhtnegar
+name: Verify Chef and Kitchen
 on:
   push:
     branches:
