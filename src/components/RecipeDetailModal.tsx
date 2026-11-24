@@ -4,9 +4,7 @@ import {
   Clock,
   Flame,
   Leaf,
-  MessageSquare,
   Play,
-  Send,
   Share2,
   Star,
   Trash2,
@@ -14,8 +12,8 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import {useEffect, useState, type ChangeEvent, type FormEvent} from 'react';
-import {attachRecipeVideo, commentRecipe, deleteRecipe, fetchRecipeDetail, rateRecipe, uploadVideoFile} from '../lib/api.ts';
+import {useEffect, useState, type ChangeEvent} from 'react';
+import {attachRecipeVideo, deleteRecipe, fetchRecipeDetail, rateRecipe, uploadVideoFile} from '../lib/api.ts';
 import {formatBytesFa, formatPrepTime, toFaDigits} from '../lib/format.ts';
 import {CATEGORY_LABELS, DIFFICULTY_LABELS, type Recipe, type StorageStats, type User} from '../types.ts';
 
@@ -49,8 +47,6 @@ export function RecipeDetailModal({
   const [checkedIngredients, setCheckedIngredients] = useState<Record<number, boolean>>({});
   const [scale, setScale] = useState<1 | 2>(1);
   const [hoverRating, setHoverRating] = useState<number>(0);
-  const [commentText, setCommentText] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -103,27 +99,6 @@ export function RecipeDetailModal({
       onRecipeUpdated(res.recipe);
     } catch (err) {
       setFeedbackError(err instanceof Error ? err.message : 'خطا در ثبت امتیاز');
-    }
-  };
-
-  const handleComment = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      onRequireAuth();
-      return;
-    }
-    if (!commentText.trim()) return;
-    setSubmittingComment(true);
-    setFeedbackError(null);
-    try {
-      const res = await commentRecipe(recipeId, commentText.trim());
-      setRecipe(res.recipe);
-      setCommentText('');
-      onRecipeUpdated(res.recipe);
-    } catch (err) {
-      setFeedbackError(err instanceof Error ? err.message : 'خطا در ارسال نظر');
-    } finally {
-      setSubmittingComment(false);
     }
   };
 
@@ -455,98 +430,43 @@ export function RecipeDetailModal({
                 </div>
               </div>
 
-              {/* Comments & Reviews Section */}
-              <div className="pt-6 border-t border-[#EEEAE0] dark:border-[#2C2722] space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#1C1917] dark:text-[#F5F2EB] flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-[#C25E00] dark:text-amber-400" />
-                    <span>نظرات و تجربه‌های آشپزی ({toFaDigits(recipe.comments?.length ?? recipe.commentCount)})</span>
-                  </h3>
-
-                  {isOwner && (
-                    <div>
-                      {!confirmDelete ? (
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDelete(true)}
-                          className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 hover:underline cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>حذف این دستور</span>
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleDelete}
-                            className="px-3 py-1 rounded-lg text-xs font-semibold bg-red-600 text-white cursor-pointer"
-                          >
-                            تایید حذف
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDelete(false)}
-                            className="px-2.5 py-1 rounded-lg text-xs border border-[#DDD6C8] dark:border-[#36302A] cursor-pointer"
-                          >
-                            انصراف
-                          </button>
-                        </div>
-                      )}
+              {/* Recipe owner controls; comments and chat are intentionally unavailable. */}
+              {isOwner && (
+                <div className="pt-6 border-t border-[#EEEAE0] dark:border-[#2C2722] flex justify-end">
+                  {!confirmDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(true)}
+                      className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>حذف این دستور</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        className="px-3 py-1 rounded-lg text-xs font-semibold bg-red-600 text-white cursor-pointer"
+                      >
+                        تایید حذف
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(false)}
+                        className="px-2.5 py-1 rounded-lg text-xs border border-[#DDD6C8] dark:border-[#36302A] cursor-pointer"
+                      >
+                        انصراف
+                      </button>
                     </div>
                   )}
                 </div>
-
-                {feedbackError && (
-                  <p className="text-xs text-red-600 dark:text-red-400 bg-red-500/10 px-3 py-2 rounded-lg">
-                    {feedbackError}
-                  </p>
-                )}
-
-                <form onSubmit={handleComment} className="flex flex-col sm:flex-row gap-2.5">
-                  <input
-                    type="text"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder={
-                      user
-                        ? 'تجربه یا نکته خود را درباره این دستور بنویسید...'
-                        : 'برای ثبت نظر ابتدا با نام کاربری وارد شوید...'
-                    }
-                    className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-[#DDD6C8] dark:border-[#36302A] bg-[#FAF9F6] dark:bg-[#141210] text-[#1C1917] dark:text-[#F5F2EB] focus:outline-none focus:border-[#C25E00]"
-                  />
-                  <button
-                    type="submit"
-                    disabled={submittingComment}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#C25E00] hover:bg-[#A64E00] dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-[#141210] transition-colors disabled:opacity-60 cursor-pointer whitespace-nowrap"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>{submittingComment ? 'در حال ارسال...' : 'ارسال نظر'}</span>
-                  </button>
-                </form>
-
-                {recipe.comments && recipe.comments.length > 0 ? (
-                  <div className="space-y-3">
-                    {recipe.comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="p-4 rounded-xl bg-[#FAF9F6] dark:bg-[#141210] border border-[#EEEAE0] dark:border-[#2C2722]"
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-1.5 text-xs text-[#78716C] dark:text-[#A8A29E]">
-                          <span className="font-semibold text-[#1C1917] dark:text-[#F5F2EB]" dir="ltr">
-                            @{comment.username}
-                          </span>
-                          <span>{new Date(comment.createdAt + 'Z').toLocaleDateString('fa-IR')}</span>
-                        </div>
-                        <p className="text-sm text-[#44403C] dark:text-[#D6D3CD] leading-6">{comment.body}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-[#78716C] dark:text-[#A8A29E] py-2">
-                    هنوز نظری برای این دستور ثبت نشده است. اولین نفر باشید!
-                  </p>
-                )}
-              </div>
+              )}
+              {feedbackError && (
+                <p role="alert" className="text-xs text-red-600 dark:text-red-400 bg-red-500/10 px-3 py-2 rounded-lg">
+                  {feedbackError}
+                </p>
+              )}
             </>
           ) : null}
         </div>
