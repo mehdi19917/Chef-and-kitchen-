@@ -723,7 +723,6 @@ async function startServer() {
         SELECT r.*,
           COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
           (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-          (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
           1 AS is_favorite
         FROM favorites f
         JOIN recipes r ON r.id = f.recipe_id
@@ -739,7 +738,6 @@ async function startServer() {
         SELECT r.*,
           COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
           (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-          (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
           CASE WHEN EXISTS (SELECT 1 FROM favorites WHERE recipe_id = r.id AND user_id = ?) THEN 1 ELSE 0 END AS is_favorite
         FROM recipes r
         WHERE r.author_id = ?
