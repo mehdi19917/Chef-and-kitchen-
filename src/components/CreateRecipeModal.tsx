@@ -149,6 +149,7 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
           title: s.title.trim() || `مرحله ${idx + 1}`,
           instruction: s.instruction.trim(),
           tip: s.tip?.trim() || undefined,
+          imageUrl: s.imageUrl,
         }));
 
       const res = await createRecipe({
