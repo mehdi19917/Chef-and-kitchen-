@@ -1,4 +1,4 @@
-import {Bookmark, MessageSquare, Play, Share2, Star, Utensils} from 'lucide-react';
+import {Bookmark, Play, Share2, Star, Utensils} from 'lucide-react';
 import {useState} from 'react';
 import {formatPrepTime, toFaDigits} from '../lib/format.ts';
 import {CATEGORY_LABELS, DIFFICULTY_LABELS, type Recipe} from '../types.ts';
@@ -130,10 +130,6 @@ export function RecipeCard({recipe, onOpenDetail, onToggleFavorite, onOpenVideo,
               )}
             </span>
 
-            <span className="inline-flex items-center gap-1 tabular-nums">
-              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-              {toFaDigits(recipe.commentCount)}
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
