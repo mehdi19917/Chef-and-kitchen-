@@ -10,6 +10,7 @@ export interface RecipeStep {
   title: string;
   instruction: string;
   tip?: string;
+  imageUrl?: string;
 }
 
 export interface RecipeComment {
