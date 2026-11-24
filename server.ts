@@ -456,7 +456,6 @@ async function startServer() {
         SELECT r.*,
           COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
           (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-          (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
           CASE WHEN ? IS NOT NULL AND EXISTS (SELECT 1 FROM favorites WHERE recipe_id = r.id AND user_id = ?) THEN 1 ELSE 0 END AS is_favorite
         FROM recipes r
         ${whereClause}
@@ -681,37 +680,6 @@ async function startServer() {
 
     const updated = getRecipeById(recipeId, user.id);
     res.json({recipe: updated});
-  });
-
-  app.post('/api/recipes/:id/comments', requireAuth, (req: AuthedRequest, res) => {
-    const recipeId = Number(req.params.id);
-    const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
-    const user = req.user!;
-
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
-      res.status(400).json({error: 'شناسه نامعتبر است.'});
-      return;
-    }
-    if (body.length < 2 || body.length > 500) {
-      res.status(400).json({error: 'متن نظر باید بین ۲ تا ۵۰۰ کاراکتر باشد.'});
-      return;
-    }
-
-    const exists = db.prepare('SELECT id FROM recipes WHERE id = ?').get(recipeId);
-    if (!exists) {
-      res.status(404).json({error: 'دستور یافت نشد.'});
-      return;
-    }
-
-    db.prepare('INSERT INTO comments (recipe_id, user_id, username, body) VALUES (?, ?, ?, ?)').run(
-      recipeId,
-      user.id,
-      user.username,
-      body,
-    );
-
-    const updated = getRecipeById(recipeId, user.id);
-    res.status(201).json({recipe: updated});
   });
 
   app.post('/api/recipes/:id/favorite', requireAuth, (req: AuthedRequest, res) => {
