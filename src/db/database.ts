@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type {IngredientItem, Recipe, RecipeCategory, RecipeComment, RecipeDifficulty, RecipeStep} from '../types.ts';
+import type {IngredientItem, Recipe, RecipeCategory, RecipeDifficulty, RecipeStep} from '../types.ts';
 
 const dataDir = path.resolve(process.cwd(), 'data');
 export const videosDir = path.resolve(dataDir, 'uploads', 'videos');
@@ -487,7 +487,6 @@ interface RawRecipeRow {
   created_at: string;
   avg_rating: number | null;
   rating_count: number;
-  comment_count: number;
   is_favorite?: number;
   user_rating?: number | null;
 }
@@ -526,7 +525,6 @@ export function mapRecipeRow(row: RawRecipeRow): Recipe {
     steps,
     avgRating: row.avg_rating ? Math.round(row.avg_rating * 10) / 10 : 0,
     ratingCount: row.rating_count ?? 0,
-    commentCount: row.comment_count ?? 0,
     isFavorite: Boolean(row.is_favorite),
     userRating: row.user_rating ?? null,
     createdAt: row.created_at,
@@ -540,7 +538,6 @@ export function getRecipeById(recipeId: number, currentUserId: number | null): R
       SELECT r.*,
         COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
         (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-        (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
         CASE WHEN ? IS NOT NULL AND EXISTS (SELECT 1 FROM favorites WHERE recipe_id = r.id AND user_id = ?) THEN 1 ELSE 0 END AS is_favorite,
         CASE WHEN ? IS NOT NULL THEN (SELECT score FROM ratings WHERE recipe_id = r.id AND user_id = ?) ELSE NULL END AS user_rating
       FROM recipes r
@@ -551,16 +548,6 @@ export function getRecipeById(recipeId: number, currentUserId: number | null): R
 
   if (!row) return null;
 
-  const comments = db
-    .prepare(
-      `SELECT id, recipe_id AS recipeId, username, body, created_at AS createdAt
-       FROM comments
-       WHERE recipe_id = ?
-       ORDER BY id DESC`,
-    )
-    .all(recipeId) as RecipeComment[];
-
   const mapped = mapRecipeRow(row);
-  mapped.comments = comments;
   return mapped;
 }

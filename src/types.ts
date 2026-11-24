@@ -10,6 +10,7 @@ export interface RecipeStep {
   title: string;
   instruction: string;
   tip?: string;
+  imageUrl?: string;
 }
 
 export interface RecipeComment {
@@ -40,9 +41,9 @@ export interface Recipe {
   steps: RecipeStep[];
   avgRating: number;
   ratingCount: number;
-  commentCount: number;
   isFavorite?: boolean;
   userRating?: number | null;
+  /** Legacy database compatibility only; never rendered or accepted through the API. */
   comments?: RecipeComment[];
   createdAt: string;
 }

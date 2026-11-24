@@ -105,7 +105,7 @@ export interface CreateRecipePayload {
   videoUrl: string | null;
   videoSizeBytes: number | null;
   ingredients: Array<{name: string; amount: string}>;
-  steps: Array<{title: string; instruction: string; tip?: string}>;
+  steps: Array<{title: string; instruction: string; tip?: string; imageUrl?: string}>;
 }
 
 export async function createRecipe(payload: CreateRecipePayload): Promise<{recipe: Recipe}> {
@@ -182,13 +182,6 @@ export async function rateRecipe(id: number, score: number): Promise<{recipe: Re
   return apiFetch(`/api/recipes/${id}/rate`, {
     method: 'POST',
     body: JSON.stringify({score}),
-  });
-}
-
-export async function commentRecipe(id: number, body: string): Promise<{recipe: Recipe}> {
-  return apiFetch(`/api/recipes/${id}/comments`, {
-    method: 'POST',
-    body: JSON.stringify({body}),
   });
 }
 

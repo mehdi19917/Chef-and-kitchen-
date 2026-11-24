@@ -178,6 +178,15 @@ function sanitizeImageUrl(input: unknown): string {
   return '/src/assets/images/recipe_tahchin_saffron_1795495624588.jpg';
 }
 
+function sanitizeStepImage(input: unknown): string | undefined {
+  if (typeof input !== 'string') return undefined;
+  const value = input.trim();
+  if (/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(value) && value.length <= 360_000) {
+    return value;
+  }
+  return undefined;
+}
+
 function sanitizeVideoUrl(input: unknown): string | null {
   if (typeof input !== 'string') return null;
   const trimmed = input.trim();
@@ -302,7 +311,7 @@ async function startServer() {
     next(err);
   });
 
-  app.use(express.json({limit: '3mb'}));
+  app.use(express.json({limit: '8mb'}));
 
   app.get('/api/health', (_req, res) => {
     res.json({ok: true});
@@ -456,7 +465,6 @@ async function startServer() {
         SELECT r.*,
           COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
           (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-          (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
           CASE WHEN ? IS NOT NULL AND EXISTS (SELECT 1 FROM favorites WHERE recipe_id = r.id AND user_id = ?) THEN 1 ELSE 0 END AS is_favorite
         FROM recipes r
         ${whereClause}
@@ -555,10 +563,11 @@ async function startServer() {
         );
       })
       .slice(0, 20)
-      .map((s: {title?: string; instruction: string; tip?: string}, idx: number) => ({
+      .map((s: {title?: string; instruction: string; tip?: string; imageUrl?: string}, idx: number) => ({
         title: typeof s.title === 'string' && s.title.trim() ? s.title.trim().slice(0, 80) : `مرحله ${idx + 1}`,
         instruction: s.instruction.trim().slice(0, 500),
         tip: typeof s.tip === 'string' && s.tip.trim() ? s.tip.trim().slice(0, 200) : undefined,
+        imageUrl: sanitizeStepImage(s.imageUrl),
       }));
 
     if (steps.length === 0) {
@@ -683,37 +692,6 @@ async function startServer() {
     res.json({recipe: updated});
   });
 
-  app.post('/api/recipes/:id/comments', requireAuth, (req: AuthedRequest, res) => {
-    const recipeId = Number(req.params.id);
-    const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
-    const user = req.user!;
-
-    if (!Number.isInteger(recipeId) || recipeId <= 0) {
-      res.status(400).json({error: 'شناسه نامعتبر است.'});
-      return;
-    }
-    if (body.length < 2 || body.length > 500) {
-      res.status(400).json({error: 'متن نظر باید بین ۲ تا ۵۰۰ کاراکتر باشد.'});
-      return;
-    }
-
-    const exists = db.prepare('SELECT id FROM recipes WHERE id = ?').get(recipeId);
-    if (!exists) {
-      res.status(404).json({error: 'دستور یافت نشد.'});
-      return;
-    }
-
-    db.prepare('INSERT INTO comments (recipe_id, user_id, username, body) VALUES (?, ?, ?, ?)').run(
-      recipeId,
-      user.id,
-      user.username,
-      body,
-    );
-
-    const updated = getRecipeById(recipeId, user.id);
-    res.status(201).json({recipe: updated});
-  });
-
   app.post('/api/recipes/:id/favorite', requireAuth, (req: AuthedRequest, res) => {
     const recipeId = Number(req.params.id);
     const user = req.user!;
@@ -755,7 +733,6 @@ async function startServer() {
         SELECT r.*,
           COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
           (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-          (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
           1 AS is_favorite
         FROM favorites f
         JOIN recipes r ON r.id = f.recipe_id
@@ -771,7 +748,6 @@ async function startServer() {
         SELECT r.*,
           COALESCE((SELECT AVG(score) FROM ratings WHERE recipe_id = r.id), 0) AS avg_rating,
           (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) AS rating_count,
-          (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) AS comment_count,
           CASE WHEN EXISTS (SELECT 1 FROM favorites WHERE recipe_id = r.id AND user_id = ?) THEN 1 ELSE 0 END AS is_favorite
         FROM recipes r
         WHERE r.author_id = ?

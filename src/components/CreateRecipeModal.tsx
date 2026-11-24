@@ -2,7 +2,8 @@ import {Film, ImagePlus, Plus, Trash2, Upload, X} from 'lucide-react';
 import {useState, type ChangeEvent, type FormEvent} from 'react';
 import {createRecipe, uploadVideoFile} from '../lib/api.ts';
 import {formatBytesFa, toFaDigits} from '../lib/format.ts';
-import type {Recipe, RecipeCategory, RecipeDifficulty, StorageStats} from '../types.ts';
+import {VoiceInputButton} from './VoiceInputButton.tsx';
+import type {Recipe, RecipeCategory, RecipeDifficulty, RecipeStep, StorageStats} from '../types.ts';
 
 interface CreateRecipeModalProps {
   open: boolean;
@@ -42,7 +43,7 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
     {name: '', amount: ''},
     {name: '', amount: ''},
   ]);
-  const [steps, setSteps] = useState<Array<{title: string; instruction: string; tip: string}>>([
+  const [steps, setSteps] = useState<RecipeStep[]>([
     {title: 'آماده‌سازی مواد اولیه', instruction: '', tip: ''},
   ]);
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +68,42 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
         setImageUrl(reader.result);
         setError(null);
       }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleStepPhotoUpload = (index: number, file?: File) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('عکس مرحله باید JPG، PNG یا WebP باشد.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => setError('خواندن عکس مرحله ناموفق بود.');
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') return;
+      const image = new Image();
+      image.onerror = () => setError('تصویر انتخاب‌شده قابل خواندن نیست.');
+      image.onload = () => {
+        const scale = Math.min(1, 900 / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+          setError('پردازش تصویر در این مرورگر پشتیبانی نمی‌شود.');
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/webp', 0.68);
+        if (compressed.length > 360_000) {
+          setError('حجم عکس مرحله پس از فشرده‌سازی هنوز زیاد است؛ عکس دیگری انتخاب کنید.');
+          return;
+        }
+        setSteps((prev) => prev.map((step, idx) => idx === index ? {...step, imageUrl: compressed} : step));
+        setError(null);
+      };
+      image.src = reader.result;
     };
     reader.readAsDataURL(file);
   };
@@ -111,7 +148,8 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
         .map((s, idx) => ({
           title: s.title.trim() || `مرحله ${idx + 1}`,
           instruction: s.instruction.trim(),
-          tip: s.tip.trim() || undefined,
+          tip: s.tip?.trim() || undefined,
+          imageUrl: s.imageUrl,
         }));
 
       const res = await createRecipe({
@@ -183,9 +221,12 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
           {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label htmlFor="recipe-title" className="block text-xs font-medium mb-1.5">
-                عنوان دستور (مثلاً: طرز تهیه ته‌چین مرغ یا کیک هویج و گردو)
-              </label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label htmlFor="recipe-title" className="block text-xs font-medium">
+                  عنوان دستور (مثلاً: طرز تهیه ته‌چین مرغ یا کیک هویج و گردو)
+                </label>
+                <VoiceInputButton onText={(text) => setTitle((prev) => prev ? prev + ' ' + text : text)} />
+              </div>
               <input
                 id="recipe-title"
                 type="text"
@@ -198,9 +239,12 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
             </div>
 
             <div className="sm:col-span-2">
-              <label htmlFor="recipe-desc" className="block text-xs font-medium mb-1.5">
-                توضیح کوتاه (طعم، بافت و کاربرد دستور)
-              </label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label htmlFor="recipe-desc" className="block text-xs font-medium">
+                  توضیح کوتاه (طعم، بافت و کاربرد دستور)
+                </label>
+                <VoiceInputButton onText={(text) => setDescription((prev) => prev ? prev + ' ' + text : text)} />
+              </div>
               <textarea
                 id="recipe-desc"
                 required
@@ -415,18 +459,27 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
 
             <div className="space-y-2">
               {ingredients.map((ing, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="نام ماده (مثلاً: برنج ایرانی)"
-                    value={ing.name}
-                    onChange={(e) => {
-                      const next = [...ingredients];
-                      next[idx] = {...next[idx], name: e.target.value};
-                      setIngredients(next);
-                    }}
-                    className="flex-1 px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#DDD6C8] dark:border-[#36302A] bg-[#FAF9F6] dark:bg-[#141210]"
-                  />
+                <div key={idx} className="flex flex-wrap sm:flex-nowrap gap-2">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex justify-end">
+                      <VoiceInputButton onText={(text) => {
+                        const next = [...ingredients];
+                        next[idx] = {...next[idx], name: next[idx].name ? next[idx].name + ' ' + text : text};
+                        setIngredients(next);
+                      }} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="نام ماده (مثلاً: برنج ایرانی)"
+                      value={ing.name}
+                      onChange={(e) => {
+                        const next = [...ingredients];
+                        next[idx] = {...next[idx], name: e.target.value};
+                        setIngredients(next);
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#DDD6C8] dark:border-[#36302A] bg-[#FAF9F6] dark:bg-[#141210]"
+                    />
+                  </div>
                   <input
                     type="text"
                     placeholder="مقدار (مثلاً: ۲ پیمانه)"
@@ -493,29 +546,68 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
                       </button>
                     )}
                   </div>
-                  <input
-                    type="text"
-                    placeholder="عنوان کوتاه مرحله"
-                    value={step.title}
-                    onChange={(e) => {
-                      const next = [...steps];
-                      next[idx] = {...next[idx], title: e.target.value};
-                      setSteps(next);
-                    }}
-                    className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
-                  />
-                  <textarea
-                    rows={2}
-                    required
-                    placeholder="شرح دقیق این مرحله از پخت..."
-                    value={step.instruction}
-                    onChange={(e) => {
-                      const next = [...steps];
-                      next[idx] = {...next[idx], instruction: e.target.value};
-                      setSteps(next);
-                    }}
-                    className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
-                  />
+                  <div className="space-y-1">
+                    <div className="flex justify-end">
+                      <VoiceInputButton onText={(text) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], title: next[idx].title ? next[idx].title + ' ' + text : text};
+                        setSteps(next);
+                      }} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="عنوان کوتاه مرحله"
+                      value={step.title}
+                      onChange={(e) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], title: e.target.value};
+                        setSteps(next);
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-[#C25E00] dark:text-amber-400 cursor-pointer">
+                      <ImagePlus className="w-4 h-4" />
+                      {step.imageUrl ? 'تغییر عکس این مرحله' : 'افزودن عکس این مرحله'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={(e) => {
+                          handleStepPhotoUpload(idx, e.target.files?.[0]);
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {step.imageUrl && (
+                      <>
+                        <img src={step.imageUrl} alt={`تصویر مرحله ${idx + 1}`} className="h-16 w-24 rounded-lg object-cover border border-[#DDD6C8] dark:border-[#36302A]" />
+                        <button type="button" onClick={() => setSteps((prev) => prev.map((item, i) => i === idx ? {...item, imageUrl: undefined} : item))} className="text-xs text-red-600 cursor-pointer">حذف عکس</button>
+                      </>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-end">
+                      <VoiceInputButton onText={(text) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], instruction: next[idx].instruction ? next[idx].instruction + ' ' + text : text};
+                        setSteps(next);
+                      }} />
+                    </div>
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="شرح دقیق این مرحله از پخت..."
+                      value={step.instruction}
+                      onChange={(e) => {
+                        const next = [...steps];
+                        next[idx] = {...next[idx], instruction: e.target.value};
+                        setSteps(next);
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
