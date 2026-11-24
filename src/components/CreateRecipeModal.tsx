@@ -3,7 +3,7 @@ import {useState, type ChangeEvent, type FormEvent} from 'react';
 import {createRecipe, uploadVideoFile} from '../lib/api.ts';
 import {formatBytesFa, toFaDigits} from '../lib/format.ts';
 import {VoiceInputButton} from './VoiceInputButton.tsx';
-import type {Recipe, RecipeCategory, RecipeDifficulty, StorageStats} from '../types.ts';
+import type {Recipe, RecipeCategory, RecipeDifficulty, RecipeStep, StorageStats} from '../types.ts';
 
 interface CreateRecipeModalProps {
   open: boolean;
@@ -43,7 +43,7 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
     {name: '', amount: ''},
     {name: '', amount: ''},
   ]);
-  const [steps, setSteps] = useState<Array<{title: string; instruction: string; tip: string}>>([
+  const [steps, setSteps] = useState<RecipeStep[]>([
     {title: 'آماده‌سازی مواد اولیه', instruction: '', tip: ''},
   ]);
   const [submitting, setSubmitting] = useState(false);
