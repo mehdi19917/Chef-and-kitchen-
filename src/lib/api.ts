@@ -185,13 +185,6 @@ export async function rateRecipe(id: number, score: number): Promise<{recipe: Re
   });
 }
 
-export async function commentRecipe(id: number, body: string): Promise<{recipe: Recipe}> {
-  return apiFetch(`/api/recipes/${id}/comments`, {
-    method: 'POST',
-    body: JSON.stringify({body}),
-  });
-}
-
 export async function toggleFavoriteRecipe(id: number): Promise<{isFavorite: boolean}> {
   return apiFetch(`/api/recipes/${id}/favorite`, {
     method: 'POST',
