@@ -15,8 +15,8 @@ export default defineConfig(() => {
         includeAssets: ['icon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
           id: '/',
-          name: 'پخت‌نگار — جامعه آشپزی، کیک‌پزی و نان‌پزی',
-          short_name: 'پخت‌نگار',
+          name: 'Chef and Kitchen — جامعه آشپزی، کیک‌پزی و نان‌پزی',
+          short_name: 'Chef & Kitchen',
           description:
             'ثبت و اشتراک‌گذاری دستورهای آشپزی، کیک‌پزی و نان‌پزی با جستجوی مواد یخچال، ویدیوهای واقعی و مود تیره و روشن آشپزخانه.',
           theme_color: '#C25E00',
