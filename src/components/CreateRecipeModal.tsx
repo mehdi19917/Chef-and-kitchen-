@@ -72,6 +72,42 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
     reader.readAsDataURL(file);
   };
 
+  const handleStepPhotoUpload = (index: number, file?: File) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('عکس مرحله باید JPG، PNG یا WebP باشد.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => setError('خواندن عکس مرحله ناموفق بود.');
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') return;
+      const image = new Image();
+      image.onerror = () => setError('تصویر انتخاب‌شده قابل خواندن نیست.');
+      image.onload = () => {
+        const scale = Math.min(1, 900 / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+          setError('پردازش تصویر در این مرورگر پشتیبانی نمی‌شود.');
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/webp', 0.68);
+        if (compressed.length > 360_000) {
+          setError('حجم عکس مرحله پس از فشرده‌سازی هنوز زیاد است؛ عکس دیگری انتخاب کنید.');
+          return;
+        }
+        setSteps((prev) => prev.map((step, idx) => idx === index ? {...step, imageUrl: compressed} : step));
+        setError(null);
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleVideoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -528,6 +564,27 @@ export function CreateRecipeModal({open, storage, onClose, onCreated}: CreateRec
                       }}
                       className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-[#DDD6C8] dark:border-[#36302A] bg-white dark:bg-[#1E1B18]"
                     />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-[#C25E00] dark:text-amber-400 cursor-pointer">
+                      <ImagePlus className="w-4 h-4" />
+                      {step.imageUrl ? 'تغییر عکس این مرحله' : 'افزودن عکس این مرحله'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={(e) => {
+                          handleStepPhotoUpload(idx, e.target.files?.[0]);
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {step.imageUrl && (
+                      <>
+                        <img src={step.imageUrl} alt={`تصویر مرحله ${idx + 1}`} className="h-16 w-24 rounded-lg object-cover border border-[#DDD6C8] dark:border-[#36302A]" />
+                        <button type="button" onClick={() => setSteps((prev) => prev.map((item, i) => i === idx ? {...item, imageUrl: undefined} : item))} className="text-xs text-red-600 cursor-pointer">حذف عکس</button>
+                      </>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-end">
